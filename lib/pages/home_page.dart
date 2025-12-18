@@ -73,21 +73,38 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void save() {
-    // Construct the amount string and convert it to double
-    String amountString =
-        '${newExpenseDollarController.text}.${newExpenseCentController.text}';
-    double amount = double.tryParse(amountString) ?? 0.0; // safely parse
+  void deleteExpense(ExpenseItem expense) {
+    Provider.of<ExpenseData>(context, listen: false).deleteExpense(expense);
+  }
 
-    ExpenseItem newExpense = ExpenseItem(
-      name: newExpenseNameController.text,
-      amount: amount, // ✅ double now
+  void save() {
+    final name = newExpenseNameController.text.trim();
+    final dollar = newExpenseDollarController.text.trim();
+    final cent = newExpenseCentController.text.trim();
+
+    if ([name, dollar, cent].any((e) => e.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields before saving.')),
+      );
+      return;
+    }
+
+    final amount = double.tryParse('$dollar.$cent');
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid positive amount.')),
+      );
+      return;
+    }
+
+    final newExpense = ExpenseItem(
+      name: name,
+      amount: amount,
       dateTime: DateTime.now(),
     );
 
     Provider.of<ExpenseData>(context, listen: false).addNewExpense(newExpense);
 
-    // Clear controllers after saving
     newExpenseNameController.clear();
     newExpenseDollarController.clear();
     newExpenseCentController.clear();
@@ -136,6 +153,8 @@ class _HomePageState extends State<HomePage> {
                 name: value.getAllExpenseList()[index].name,
                 amount: value.getAllExpenseList()[index].amount,
                 dateTime: value.getAllExpenseList()[index].dateTime,
+                deleteTapped: (p0) =>
+                    deleteExpense(value.getAllExpenseList()[index]),
               ),
             ),
           ],

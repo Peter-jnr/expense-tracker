@@ -8,9 +8,29 @@ class ExpenseSummary extends StatelessWidget {
   final DateTime startOfWeek;
   const ExpenseSummary({super.key, required this.startOfWeek});
 
+  // Calculate total for the week
+  double calculateWeekTotal(
+    Map<String, double> dailyExpenseSummary,
+    String sunday,
+    String monday,
+    String tuesday,
+    String wednesday,
+    String thursday,
+    String friday,
+    String saturday,
+  ) {
+    return (dailyExpenseSummary[sunday] ?? 0) +
+        (dailyExpenseSummary[monday] ?? 0) +
+        (dailyExpenseSummary[tuesday] ?? 0) +
+        (dailyExpenseSummary[wednesday] ?? 0) +
+        (dailyExpenseSummary[thursday] ?? 0) +
+        (dailyExpenseSummary[friday] ?? 0) +
+        (dailyExpenseSummary[saturday] ?? 0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // get dates for the week
+    // Generate string dates for the week
     String sunday = convertDateTimeToString(
       startOfWeek.add(const Duration(days: 0)),
     );
@@ -34,18 +54,76 @@ class ExpenseSummary extends StatelessWidget {
     );
 
     return Consumer<ExpenseData>(
-      builder: (context, value, child) => SizedBox(
-        height: 200,
-        child: MyBarGraph(
-          sundayAmount: value.calculateDailyExpenseSummary()[sunday] ?? 0,
-          mondayAmount: value.calculateDailyExpenseSummary()[monday] ?? 0,
-          tuesdayAmount: value.calculateDailyExpenseSummary()[tuesday] ?? 0,
-          wednesdayAmount: value.calculateDailyExpenseSummary()[wednesday] ?? 0,
-          thursdayAmount: value.calculateDailyExpenseSummary()[thursday] ?? 0,
-          fridayAmount: value.calculateDailyExpenseSummary()[friday] ?? 0,
-          saturdayAmount: value.calculateDailyExpenseSummary()[saturday] ?? 0,
-        ),
-      ),
+      builder: (context, value, child) {
+        final dailySummary = value.calculateDailyExpenseSummary();
+
+        // Ensure we have non-null values for all days
+        final sundayAmount = dailySummary[sunday] ?? 0;
+        final mondayAmount = dailySummary[monday] ?? 0;
+        final tuesdayAmount = dailySummary[tuesday] ?? 0;
+        final wednesdayAmount = dailySummary[wednesday] ?? 0;
+        final thursdayAmount = dailySummary[thursday] ?? 0;
+        final fridayAmount = dailySummary[friday] ?? 0;
+        final saturdayAmount = dailySummary[saturday] ?? 0;
+
+        final weekTotal = calculateWeekTotal(
+          dailySummary,
+          sunday,
+          monday,
+          tuesday,
+          wednesday,
+          thursday,
+          friday,
+          saturday,
+        );
+
+        // Determine maxY dynamically so bars scale properly
+        final maxY =
+            [
+              sundayAmount,
+              mondayAmount,
+              tuesdayAmount,
+              wednesdayAmount,
+              thursdayAmount,
+              fridayAmount,
+              saturdayAmount,
+            ].fold<double>(
+              0,
+              (prev, element) => element > prev ? element : prev,
+            ) *
+            1.2; // add 20% padding
+
+        return Column(
+          children: [
+            // Week total display
+            Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Row(
+                children: [
+                  Text(
+                    'Week Total: \$${weekTotal.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+              ),
+            ),
+            // Week summary bar graph
+            SizedBox(
+              height: 200,
+              child: MyBarGraph(
+                sundayAmount: sundayAmount,
+                mondayAmount: mondayAmount,
+                tuesdayAmount: tuesdayAmount,
+                wednesdayAmount: wednesdayAmount,
+                thursdayAmount: thursdayAmount,
+                fridayAmount: fridayAmount,
+                saturdayAmount: saturdayAmount,
+                maxY: maxY,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

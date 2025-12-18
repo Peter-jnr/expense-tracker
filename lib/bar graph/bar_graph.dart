@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class MyBarGraph extends StatelessWidget {
-  final double? maxY; // Optional maxY
+  final double? maxY;
   final double sundayAmount;
   final double mondayAmount;
   final double tuesdayAmount;
@@ -26,7 +26,6 @@ class MyBarGraph extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Initialize BarData
     BarData myBarData = BarData(
       sundayAmount: sundayAmount,
       mondayAmount: mondayAmount,
@@ -38,16 +37,18 @@ class MyBarGraph extends StatelessWidget {
     );
     myBarData.initializeBarData();
 
-    // Determine dynamic maxY if not provided
+    // Determine dynamic maxY
     double calculatedMaxY =
         maxY ??
-        (myBarData.barData
-                .map((data) => data.y)
-                .fold<double>(
-                  0,
-                  (prev, element) => element > prev ? element : prev,
-                ) *
-            1.2); // Add 20% padding so bars don't touch top
+        (myBarData.barData.isNotEmpty
+            ? myBarData.barData
+                      .map((data) => data.y)
+                      .fold<double>(
+                        0,
+                        (prev, element) => element > prev ? element : prev,
+                      ) *
+                  1.2
+            : 10); // Minimum maxY so graph shows even if empty
 
     return BarChart(
       BarChartData(
@@ -72,6 +73,7 @@ class MyBarGraph extends StatelessWidget {
             .map(
               (data) => BarChartGroupData(
                 x: data.x,
+                barsSpace: 4, // spacing between bars in a group
                 barRods: [
                   BarChartRodData(
                     toY: data.y,
@@ -80,7 +82,7 @@ class MyBarGraph extends StatelessWidget {
                     borderRadius: BorderRadius.circular(5),
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
-                      toY: calculatedMaxY, // Use dynamic maxY here too
+                      toY: calculatedMaxY,
                       color: Colors.grey[200],
                     ),
                   ),
@@ -88,6 +90,8 @@ class MyBarGraph extends StatelessWidget {
               ),
             )
             .toList(),
+        alignment: BarChartAlignment.spaceAround,
+        barTouchData: BarTouchData(enabled: false),
       ),
     );
   }

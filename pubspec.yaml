@@ -39,6 +39,7 @@ dependencies:
   hive: ^2.2.3 # Hive core
   hive_flutter: ^1.1.0 # For Flutter integration
   path_provider: ^2.0.17 # Needed to store Hive boxes on device
+  flutter_slidable: ^4.0.3
 
 dev_dependencies:
   flutter_test:
