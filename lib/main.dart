@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'pages/home_page.dart';
-import 'package:expense_tracker_1/data/expense_data.dart';
+import 'data/expense_data.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive and open the box
+  await Hive.initFlutter();
+  await Hive.openBox('expense_database');
+
   runApp(const MyApp());
 }
 
@@ -12,13 +19,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Expense Tracker',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: ChangeNotifierProvider(
-        create: (_) => ExpenseData(),
-        child: const HomePage(),
+    return ChangeNotifierProvider(
+      create: (_) => ExpenseData()..prepareData(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Expense Tracker',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        home: const HomePage(),
       ),
     );
   }
