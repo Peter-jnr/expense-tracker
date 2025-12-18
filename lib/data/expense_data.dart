@@ -1,27 +1,37 @@
-import 'package:expense_tracker_1/models/expense_item.dart';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker_1/datetime/date_time_helper.dart';
+import '../models/expense_item.dart';
+import 'hive_database.dart';
+import '../datetime/date_time_helper.dart';
 
 class ExpenseData extends ChangeNotifier {
   List<ExpenseItem> overallExpenseList = [];
 
-  List<ExpenseItem> getAllExpenseList() {
-    return overallExpenseList;
+  final HiveDatabase db = HiveDatabase();
+
+  // Load data from Hive
+  void prepareData() {
+    overallExpenseList = db.readData();
+    notifyListeners();
   }
 
-  // add new expense
+  // Get all expenses
+  List<ExpenseItem> getAllExpenseList() => overallExpenseList;
+
+  // Add a new expense
   void addNewExpense(ExpenseItem newExpense) {
     overallExpenseList.add(newExpense);
+    db.saveData(overallExpenseList);
     notifyListeners();
   }
 
-  // delete expense
+  // Delete an expense
   void deleteExpense(ExpenseItem expense) {
     overallExpenseList.remove(expense);
+    db.saveData(overallExpenseList);
     notifyListeners();
   }
 
-  // for getting day name from date
+  // Get day name from DateTime
   String getDayName(DateTime date) {
     switch (date.weekday) {
       case 1:
@@ -43,49 +53,35 @@ class ExpenseData extends ChangeNotifier {
     }
   }
 
-  //get start of the week
+  // Start of the week
   DateTime startOfTheWeek() {
-    DateTime? startOfTheWeek;
     DateTime today = DateTime.now();
-
     for (int i = 0; i < 7; i++) {
       if (getDayName(today.subtract(Duration(days: i))) == 'Sun') {
-        startOfTheWeek = today.subtract(Duration(days: i));
+        return today.subtract(Duration(days: i));
       }
     }
-    return startOfTheWeek!;
+    return today;
   }
 
+  // Calculate daily expenses for charts
   Map<String, double> calculateDailyExpense() {
     Map<String, double> dailyExpense = {};
-
-    for (int i = 0; i < overallExpenseList.length; i++) {
-      String dayName = getDayName(overallExpenseList[i].dateTime);
-      if (dailyExpense.containsKey(dayName)) {
-        dailyExpense[dayName] =
-            dailyExpense[dayName]! + overallExpenseList[i].amount;
-      } else {
-        dailyExpense[dayName] = overallExpenseList[i].amount;
-      }
+    for (var expense in overallExpenseList) {
+      String dayName = getDayName(expense.dateTime);
+      dailyExpense[dayName] =
+          (dailyExpense[dayName] ?? 0) + expense.amount;
     }
     return dailyExpense;
   }
 
-  // get weekly expense
+  // Daily expense summary
   Map<String, double> calculateDailyExpenseSummary() {
     Map<String, double> dailyExpenseSummary = {};
-
     for (var expense in overallExpenseList) {
       String date = convertDateTimeToString(expense.dateTime);
       double amount = double.parse(expense.amount.toStringAsFixed(2));
-
-      if (dailyExpenseSummary.containsKey(date)) {
-        double currentAmount = dailyExpenseSummary[date]! + amount;
-        currentAmount += amount;
-        dailyExpenseSummary[date] = currentAmount;
-      } else {
-        dailyExpenseSummary.addAll({date: amount});
-      }
+      dailyExpenseSummary[date] = (dailyExpenseSummary[date] ?? 0) + amount;
     }
     return dailyExpenseSummary;
   }
